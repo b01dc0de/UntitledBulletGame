@@ -57,11 +57,48 @@ void InitGraphics_DX11(GameState* _State)
     _State->Context->OMSetRenderTargets(1, &_State->RenderTargetView, nullptr);
 }
 
+void lerp4(const float* A, const float* B, float t, float* C) {
+    C[0] = A[0] + t * (B[0] - A[0]);
+    C[1] = A[1] + t * (B[1] - A[1]);
+    C[2] = A[2] + t * (B[2] - A[2]);
+    C[3] = A[3] + t * (B[3] - A[3]);
+}
+
+void GetClearColor(float* OutClearColor)
+{
+    constexpr bool bCycleColorsBG = true;
+    if (bCycleColorsBG)
+    {
+        constexpr float Colors[][4] = {
+            { 1.0f, 0.0f, 0.0f, 1.0f },
+            { 0.0f, 1.0f, 0.0f, 1.0f },
+            { 0.0f, 0.0f, 0.1f, 1.0f },
+            { 1.0f, 1.0f, 1.0f, 1.0f },
+            { 0.0f, 0.0f, 0.0f, 1.0f }
+        };
+        constexpr float StepDurationSeconds = 2.0f;
+        constexpr size_t NumColors = ARRAY_SIZE(Colors);
+
+        float CurrTime = (float)GlobalState.Clock.CurrTime;
+        float Factor = (CurrTime / StepDurationSeconds) - (float)(int)(CurrTime / StepDurationSeconds);
+        int StepNumber = (int)(CurrTime / StepDurationSeconds) % NumColors;
+        lerp4(Colors[StepNumber], Colors[(StepNumber + 1) % NumColors], Factor, OutClearColor);
+    }
+    else
+    {
+        OutClearColor[0] = 242.0f / 255.0f;
+        OutClearColor[1] = 80.0f / 255.0f;
+        OutClearColor[2] = 34.0f / 255.0f;
+        OutClearColor[3] = 1.0f;
+    }
+}
+
 void Draw_DX11(GameState* _State)
 {
     _State->Context->OMSetRenderTargets(1, &_State->RenderTargetView, nullptr);
 
-    constexpr float ClearColor[4] = { 242.0f / 255.0f, 80.0f / 255.0f, 34.0f / 255.0f, 1.0f };
+    float ClearColor[4] = { };
+    GetClearColor(ClearColor);
     _State->Context->ClearRenderTargetView(_State->RenderTargetView, ClearColor);
 
     _State->SwapChain->Present(0, 0);
