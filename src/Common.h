@@ -1,13 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-
-#include <d3d11.h>
-#include <dxgi.h>
-#include <dxgi1_2.h>
-
 #include <stdint.h>
 #include <stdio.h>
 
@@ -24,18 +17,30 @@ using s64 = int64_t;
 using f32 = float;
 using f64 = double;
 
-void Outf(const char* Fmt, ...)
+#include "UntitledBulletGame_Win32.h"
+#include "UntitledBulletGame_DX11.h"
+
+struct GameState
 {
-    constexpr size_t BufferLength = 1024;
-    char MsgBuffer[BufferLength] = {};
+    bool bRunning;
+    int Width;
+    int Height;
 
-    va_list Args;
-    va_start(Args, Fmt);
-    vsprintf_s(MsgBuffer, BufferLength, Fmt, Args);
-    va_end(Args);
+    // Graphics (DX11)
+    ID3D11Device* Device;
+    ID3D11DeviceContext* Context;
+    D3D_FEATURE_LEVEL FeatureLevel;
+    IDXGISwapChain1* SwapChain;
+    ID3D11Texture2D* BackBuffer;
+    ID3D11RenderTargetView* RenderTargetView;
 
-    OutputDebugStringA(MsgBuffer);
-}
+    // Platform (Win32)
+    HINSTANCE hInstance;
+    HWND Window;
+};
+extern GameState GlobalState;
+
+void Outf(const char* Fmt, ...);
 
 #define DEBUG_BREAKPOINT() DebugBreak()
 #define UNUSED_VAR(Var) (void)Var

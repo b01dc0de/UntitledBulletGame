@@ -6,12 +6,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Main.cpp">
+    <ClCompile Include="src\UntitledBulletGame.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UntitledBulletGame_DX11.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UntitledBulletGame_Win32.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Common.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\UntitledBulletGame_DX11.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\UntitledBulletGame_Win32.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
