@@ -5,28 +5,20 @@ struct GameState
     bool bRunning;
     int Width;
     int Height;
-};
-GameState GlobalGameState;
 
-struct GraphicsState
-{
+    // Graphics (DX11)
     ID3D11Device* Device;
     ID3D11DeviceContext* Context;
     D3D_FEATURE_LEVEL FeatureLevel;
     IDXGISwapChain1* SwapChain;
     ID3D11Texture2D* BackBuffer;
     ID3D11RenderTargetView* RenderTargetView;
-};
-GraphicsState GlobalGraphicsState;
 
-struct Win32PlatformState
-{
+    // Platform (Win32)
     HINSTANCE hInstance;
     HWND Window;
 };
-
-using PlatformState = Win32PlatformState;
-PlatformState GlobalPlatformState;
+GameState GlobalState;
 
 LRESULT WndProc_Win32(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -39,14 +31,14 @@ LRESULT WndProc_Win32(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             if (wParam == VK_ESCAPE)
             {
-                GlobalGameState.bRunning = false;
+                GlobalState.bRunning = false;
             }
         }
         case WM_CLOSE:
         case WM_DESTROY:
         case WM_QUIT:
         {
-            GlobalGameState.bRunning = false;
+            GlobalState.bRunning = false;
         } break;
         default:
         {
@@ -57,7 +49,7 @@ LRESULT WndProc_Win32(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return lResult;
 }
 
-void InitGraphics_DX11(GraphicsState* _GraphicsState)
+void InitGraphics_DX11(GameState* _State)
 {
     UINT CreateDeviceFlags = 0;
 #if _DEBUG
@@ -71,12 +63,12 @@ void InitGraphics_DX11(GraphicsState* _GraphicsState)
         nullptr,
         0,
         D3D11_SDK_VERSION,
-        &_GraphicsState->Device,
-        &_GraphicsState->FeatureLevel,
-        &_GraphicsState->Context
+        &_State->Device,
+        &_State->FeatureLevel,
+        &_State->Context
     );
 
-    if (!GlobalGraphicsState.Device)
+    if (!_State->Device)
     {
         Outf("[error] Call to D3D11CreateDevice failed\n");
         return;
@@ -84,8 +76,8 @@ void InitGraphics_DX11(GraphicsState* _GraphicsState)
 
 
     DXGI_SWAP_CHAIN_DESC1 SwapChainDesc1 = {};
-    SwapChainDesc1.Width = GlobalGameState.Width;
-    SwapChainDesc1.Height = GlobalGameState.Height;
+    SwapChainDesc1.Width = _State->Width;
+    SwapChainDesc1.Height = _State->Height;
     SwapChainDesc1.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     SwapChainDesc1.Stereo = FALSE;
     SwapChainDesc1.SampleDesc = { 1, 0 };
@@ -99,32 +91,32 @@ void InitGraphics_DX11(GraphicsState* _GraphicsState)
     IDXGIFactory2* DxFactory2 = nullptr;
     (void)CreateDXGIFactory1(__uuidof(IDXGIFactory2), (void**)(&DxFactory2));
     (void)DxFactory2->CreateSwapChainForHwnd(
-        _GraphicsState->Device,
-        GlobalPlatformState.Window,
+        _State->Device,
+        _State->Window,
         &SwapChainDesc1,
         nullptr,
         nullptr,
-        &_GraphicsState->SwapChain
+        &_State->SwapChain
     );
 
-    (void)_GraphicsState->SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&_GraphicsState->BackBuffer);
+    (void)_State->SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&_State->BackBuffer);
 
-    (void)_GraphicsState->Device->CreateRenderTargetView(_GraphicsState->BackBuffer, nullptr, &_GraphicsState->RenderTargetView);
+    (void)_State->Device->CreateRenderTargetView(_State->BackBuffer, nullptr, &_State->RenderTargetView);
 
-    _GraphicsState->Context->OMSetRenderTargets(1, &_GraphicsState->RenderTargetView, nullptr);
+    _State->Context->OMSetRenderTargets(1, &_State->RenderTargetView, nullptr);
 }
 
-void Draw_DX11(GraphicsState* _GraphicsState)
+void Draw_DX11(GameState* _State)
 {
-    _GraphicsState->Context->OMSetRenderTargets(1, &_GraphicsState->RenderTargetView, nullptr);
+    _State->Context->OMSetRenderTargets(1, &_State->RenderTargetView, nullptr);
 
     constexpr float ClearColor[4] = { 242.0f / 255.0f, 80.0f / 255.0f, 34.0f / 255.0f, 1.0f };
-    _GraphicsState->Context->ClearRenderTargetView(_GraphicsState->RenderTargetView, ClearColor);
+    _State->Context->ClearRenderTargetView(_State->RenderTargetView, ClearColor);
 
-    _GraphicsState->SwapChain->Present(0, 0);
+    _State->SwapChain->Present(0, 0);
 }
 
-void InitPlatform_Win32(Win32PlatformState* _PlatformState)
+void InitPlatform_Win32(GameState* _State)
 {
     int WindowWidth = 1280;
     int WindowHeight = 720;
@@ -145,11 +137,11 @@ void InitPlatform_Win32(Win32PlatformState* _PlatformState)
     WindowClass.lpfnWndProc = WndProc_Win32;
     WindowClass.cbClsExtra = 0;
     WindowClass.cbWndExtra = 0;
-    WindowClass.hInstance = _PlatformState->hInstance;
+    WindowClass.hInstance = _State->hInstance;
     WindowClass.lpszClassName = WindowClassName;
     (void)RegisterClassExA(&WindowClass);
 
-    _PlatformState->Window = CreateWindowExA(
+    _State->Window = CreateWindowExA(
         WindowExStyle,
         WindowClassName,
         WindowClassName,
@@ -160,15 +152,15 @@ void InitPlatform_Win32(Win32PlatformState* _PlatformState)
         nullptr, nullptr, nullptr, nullptr
     );
 
-    ShowWindow(_PlatformState->Window, SW_SHOWNORMAL);
+    ShowWindow(_State->Window, SW_SHOWNORMAL);
 }
 
-void TickPlatform_Win32(Win32PlatformState* _PlatformState)
+void TickPlatform_Win32(GameState* _State)
 {
-    if (_PlatformState && _PlatformState->Window)
+    if (_State && _State->Window)
     {
         MSG Msg = {};
-        while (PeekMessageA(&Msg, _PlatformState->Window, 0, 0, TRUE))
+        while (PeekMessageA(&Msg, _State->Window, 0, 0, TRUE))
         {
             TranslateMessage(&Msg);
             DispatchMessageA(&Msg);
@@ -181,20 +173,20 @@ void Init(HINSTANCE _hInst)
     UNUSED_VAR(_hInst);
     OutputDebugStringA("UntitledBulletGame -- INIT\n");
 
-    GlobalPlatformState = { _hInst };
-    InitPlatform_Win32(&GlobalPlatformState);
-    GlobalGraphicsState = { };
-    InitGraphics_DX11(&GlobalGraphicsState);
+    GlobalState = { };
+    GlobalState.hInstance = _hInst;
+    InitPlatform_Win32(&GlobalState);
+    InitGraphics_DX11(&GlobalState);
 
-    GlobalGameState.bRunning = true;
+    GlobalState.bRunning = true;
 }
 
 void GameLoop()
 {
-    while (GlobalGameState.bRunning)
+    while (GlobalState.bRunning)
     {
-        TickPlatform_Win32(&GlobalPlatformState);
-        Draw_DX11(&GlobalGraphicsState);
+        TickPlatform_Win32(&GlobalState);
+        Draw_DX11(&GlobalState);
     }
 }
 
