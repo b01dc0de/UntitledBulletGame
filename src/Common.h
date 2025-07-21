@@ -4,9 +4,13 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include <d3d11.h>
+#include <dxgi.h>
+#include <dxgi1_2.h>
+
 #include <stdio.h>
 
-void Outf(char* Fmt, ...)
+void Outf(const char* Fmt, ...)
 {
     constexpr size_t BufferLength = 1024;
     char MsgBuffer[BufferLength] = {};
