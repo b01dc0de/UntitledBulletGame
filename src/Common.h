@@ -20,8 +20,20 @@ using f64 = double;
 #include "UntitledBulletGame_Win32.h"
 #include "UntitledBulletGame_DX11.h"
 
+struct ClockT
+{
+    u64 Freq;
+    u64 Epoch;
+
+    u64 CurrTs;
+    f64 CurrTime;
+    f64 LastFrameDuration;
+};
+
 struct GameState
 {
+    ClockT Clock;
+
     bool bRunning;
     int Width;
     int Height;
